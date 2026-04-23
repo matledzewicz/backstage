@@ -4,36 +4,36 @@ import { MeetupStatus, TalkStatus, TaskStatus } from '../../core/models';
 type AnyStatus = MeetupStatus | TalkStatus | TaskStatus;
 
 const MEETUP_CONFIG: Record<MeetupStatus, { label: string; cls: string }> = {
-  'planowanie': { label: '📝 planowanie', cls: 'bg-gray-800 text-gray-400 border-gray-700' },
-  'cfp-open': { label: '📣 CFP open', cls: 'bg-blue-950 text-blue-400 border-blue-800' },
-  'cfp-closed': { label: '🔒 CFP closed', cls: 'bg-indigo-950 text-indigo-400 border-indigo-800' },
-  'scheduled': { label: '📅 zaplanowany', cls: 'bg-purple-950 text-purple-400 border-purple-800' },
-  'za-tydzien': { label: '⏰ za tydzień', cls: 'bg-yellow-950 text-yellow-400 border-yellow-800' },
-  'dzis': { label: '🔥 DZIŚ', cls: 'bg-red-950 text-red-400 border-red-700 animate-pulse' },
-  'odbyty': { label: '✅ odbyty', cls: 'bg-green-950 text-green-600 border-green-900' },
+  'planowanie': { label: 'planowanie', cls: 'bg-stone-100 text-stone-700 border-stone-200' },
+  'cfp-open': { label: 'CFP otwarty', cls: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+  'cfp-closed': { label: 'CFP zamknięty', cls: 'bg-violet-50 text-violet-700 border-violet-200' },
+  'scheduled': { label: 'zaplanowany', cls: 'bg-sky-50 text-sky-700 border-sky-200' },
+  'za-tydzien': { label: 'za tydzień', cls: 'bg-amber-50 text-amber-800 border-amber-200' },
+  'dzis': { label: 'dziś', cls: 'bg-rose-50 text-rose-700 border-rose-200' },
+  'odbyty': { label: 'odbyty', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
 };
 
 const TALK_CONFIG: Record<TalkStatus, { label: string; cls: string }> = {
-  'submitted': { label: '📨 submitted', cls: 'bg-gray-800 text-gray-400 border-gray-700' },
-  'reviewing': { label: '👀 reviewing', cls: 'bg-blue-950 text-blue-400 border-blue-800' },
-  'approved': { label: '✅ approved', cls: 'bg-green-950 text-green-400 border-green-800' },
-  'rejected': { label: '❌ rejected', cls: 'bg-red-950 text-red-500 border-red-900' },
-  'scheduled': { label: '📅 scheduled', cls: 'bg-purple-950 text-purple-400 border-purple-800' },
-  'delivered': { label: '🎤 delivered', cls: 'bg-teal-950 text-teal-400 border-teal-800' },
+  'submitted': { label: 'zgłoszony', cls: 'bg-stone-100 text-stone-700 border-stone-200' },
+  'reviewing': { label: 'w review', cls: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+  'approved': { label: 'zaakceptowany', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  'rejected': { label: 'odrzucony', cls: 'bg-rose-50 text-rose-700 border-rose-200' },
+  'scheduled': { label: 'zaplanowany', cls: 'bg-violet-50 text-violet-700 border-violet-200' },
+  'delivered': { label: 'wygłoszony', cls: 'bg-teal-50 text-teal-700 border-teal-200' },
 };
 
 const TASK_CONFIG: Record<TaskStatus, { label: string; cls: string }> = {
-  'todo': { label: '⬜ todo', cls: 'bg-gray-800 text-gray-400 border-gray-700' },
-  'doing': { label: '🔄 doing', cls: 'bg-blue-950 text-blue-400 border-blue-800' },
-  'blocked': { label: '🚫 blocked', cls: 'bg-red-950 text-red-400 border-red-800' },
-  'done': { label: '✅ done', cls: 'bg-green-950 text-green-400 border-green-800' },
+  'todo': { label: 'do zrobienia', cls: 'bg-stone-100 text-stone-700 border-stone-200' },
+  'doing': { label: 'w trakcie', cls: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+  'blocked': { label: 'zablokowane', cls: 'bg-rose-50 text-rose-700 border-rose-200' },
+  'done': { label: 'gotowe', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
 };
 
 @Component({
   selector: 'app-status-badge',
   standalone: true,
   template: `
-    <span class="inline-flex items-center px-2 py-0.5 text-xs font-mono border rounded {{ config.cls }}">
+    <span class="inline-flex items-center px-2.5 py-0.5 text-xs font-medium border rounded-full {{ config.cls }}">
       {{ config.label }}
     </span>
   `,

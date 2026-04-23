@@ -6,24 +6,24 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
   template: `
-    <div class="min-h-screen bg-[#0a0a0f] text-gray-200">
-      <!-- Nav -->
-      <nav class="bg-gray-950 border-b border-gray-800 px-4 py-3 flex items-center gap-6">
-        <div class="font-bold text-green-400 font-mono text-sm tracking-wider">
-          🎛️ BACKSTAGE
-        </div>
-        <div class="flex gap-4">
+    <div class="min-h-screen bg-stone-50 text-stone-900">
+      <nav class="bg-white/80 backdrop-blur border-b border-stone-200 px-6 py-3 flex items-center gap-8 sticky top-0 z-20">
+        <a routerLink="/dashboard" class="flex items-center gap-2.5 font-semibold text-stone-900 text-[15px]">
+          <span class="inline-block w-6 h-6 rounded-xl bg-gradient-to-br from-indigo-500 via-violet-500 to-pink-500"></span>
+          Backstage
+        </a>
+        <div class="flex gap-2 text-sm">
           <a
             routerLink="/dashboard"
-            routerLinkActive="text-green-400 border-b border-green-400"
-            class="text-sm text-gray-500 hover:text-gray-300 transition-colors pb-0.5 font-mono"
+            routerLinkActive="bg-stone-900 text-white"
+            class="px-3.5 py-1.5 rounded-full text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition-colors"
           >
-            Dashboard
+            Panel
           </a>
           <a
             routerLink="/pipeline"
-            routerLinkActive="text-green-400 border-b border-green-400"
-            class="text-sm text-gray-500 hover:text-gray-300 transition-colors pb-0.5 font-mono"
+            routerLinkActive="bg-stone-900 text-white"
+            class="px-3.5 py-1.5 rounded-full text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition-colors"
           >
             Pipeline
           </a>
