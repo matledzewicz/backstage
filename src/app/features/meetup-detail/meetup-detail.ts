@@ -1,16 +1,16 @@
 import { Component, inject, computed, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AppStore } from '../../core/state/app.store';
-import { Task, TaskStatus, Talk, TalkStatus } from '../../core/models';
+import { Task, TaskStatus } from '../../core/models';
 import { StatusBadgeComponent } from '../../shared/ui/status-badge';
 
 type Tab = 'overview' | 'talks' | 'tasks' | 'speakers' | 'sponsors';
 
-const TASK_COLUMNS: { status: TaskStatus; label: string }[] = [
-  { status: 'todo', label: '⬜ Todo' },
-  { status: 'doing', label: '🔄 Doing' },
-  { status: 'blocked', label: '🚫 Blocked' },
-  { status: 'done', label: '✅ Done' },
+const TASK_COLUMNS: { status: TaskStatus; label: string; col: string; dot: string }[] = [
+  { status: 'todo', label: 'Do zrobienia', col: 'bg-stone-100/70 border-stone-200', dot: 'bg-stone-400' },
+  { status: 'doing', label: 'W trakcie', col: 'bg-indigo-50/80 border-indigo-200', dot: 'bg-indigo-500' },
+  { status: 'blocked', label: 'Zablokowane', col: 'bg-rose-50/80 border-rose-200', dot: 'bg-rose-500' },
+  { status: 'done', label: 'Gotowe', col: 'bg-emerald-50/80 border-emerald-200', dot: 'bg-emerald-500' },
 ];
 
 const TASK_NEXT: Record<TaskStatus, TaskStatus> = {
@@ -20,128 +20,129 @@ const TASK_NEXT: Record<TaskStatus, TaskStatus> = {
   done: 'todo',
 };
 
+const TASK_NEXT_LABEL: Record<TaskStatus, string> = {
+  todo: 'w trakcie',
+  doing: 'gotowe',
+  blocked: 'do zrobienia',
+  done: 'do zrobienia',
+};
+
 @Component({
   selector: 'app-meetup-detail',
   standalone: true,
   imports: [RouterLink, StatusBadgeComponent],
   template: `
     @if (meetup()) {
-      <div class="min-h-screen p-4 md:p-6">
-        <!-- Header -->
-        <div class="flex items-center gap-4 mb-6">
-          <a routerLink="/dashboard" class="text-gray-500 hover:text-white text-sm">← Dashboard</a>
+      <div class="max-w-[1400px] mx-auto px-6 py-8">
+        <div class="flex items-start gap-4 mb-8">
+          <a routerLink="/dashboard" class="text-stone-500 hover:text-stone-900 text-sm mt-1">← Panel</a>
           <div class="flex-1">
-            <div class="flex items-center gap-3">
-              <h1 class="text-xl font-bold text-white">{{ meetup()!.name }}</h1>
+            <div class="flex items-center gap-3 flex-wrap">
+              <h1 class="text-2xl font-semibold text-stone-900 tracking-tight">{{ meetup()!.name }}</h1>
               <app-status-badge [status]="meetup()!.status" type="meetup" />
             </div>
-            <div class="text-xs text-gray-500 mt-1">
-              📅 {{ formatDate(meetup()!.date) }} &nbsp;|&nbsp; 📍 {{ meetup()!.venue }}
-              &nbsp;|&nbsp; 👥 {{ meetup()!.registered }}/{{ meetup()!.capacity }}
+            <div class="text-sm text-stone-500 mt-1">
+              {{ formatDate(meetup()!.date) }} &middot; {{ meetup()!.venue }}
+              &middot; {{ meetup()!.registered }}/{{ meetup()!.capacity }} zapisów
             </div>
           </div>
         </div>
 
-        <!-- Tabs -->
-        <div class="flex gap-1 mb-6 border-b border-gray-800 overflow-x-auto">
+        <div class="flex gap-1 mb-8 border-b border-stone-200 overflow-x-auto">
           @for (tab of tabs; track tab.id) {
             <button
               (click)="activeTab.set(tab.id)"
-              class="px-4 py-2 text-sm font-mono whitespace-nowrap transition-colors cursor-pointer"
+              class="px-4 py-2.5 text-sm whitespace-nowrap transition-colors cursor-pointer border-b-2"
               [class]="activeTab() === tab.id
-                ? 'text-green-400 border-b-2 border-green-400 -mb-px'
-                : 'text-gray-500 hover:text-gray-300'"
+                ? 'text-stone-900 border-indigo-500 font-medium -mb-px'
+                : 'text-stone-500 hover:text-stone-800 border-transparent'"
             >
               {{ tab.label }}
             </button>
           }
         </div>
 
-        <!-- Tab Content -->
         @switch (activeTab()) {
           @case ('overview') {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <!-- Stats -->
-              <div class="bg-gray-900 border border-gray-800 p-4 rounded">
-                <h3 class="text-sm text-gray-400 font-mono mb-3">📊 Statystyki</h3>
-                <div class="space-y-3">
+              <div class="bg-white border border-stone-200 p-5 rounded-3xl shadow-sm">
+                <h3 class="text-sm font-medium text-stone-700 mb-4">Statystyki</h3>
+                <div class="space-y-4">
                   <div>
-                    <div class="flex justify-between text-sm mb-1">
-                      <span class="text-gray-400">Rejestracja</span>
-                      <span class="text-white">{{ meetup()!.registered }}/{{ meetup()!.capacity }}</span>
+                    <div class="flex justify-between text-sm mb-1.5">
+                      <span class="text-stone-500">Rejestracja</span>
+                      <span class="text-stone-900 tabular-nums">{{ meetup()!.registered }} / {{ meetup()!.capacity }}</span>
                     </div>
-                    <div class="h-2 bg-gray-800 rounded-full">
-                      <div class="h-full bg-blue-500 rounded-full" [style.width]="regPct() + '%'"></div>
+                    <div class="h-2 bg-stone-100 rounded-full overflow-hidden">
+                      <div class="h-full bg-indigo-500 rounded-full transition-all duration-500" [style.width]="regPct() + '%'"></div>
                     </div>
                   </div>
                   <div>
-                    <div class="flex justify-between text-sm mb-1">
-                      <span class="text-gray-400">Taski done</span>
-                      <span class="text-white">{{ doneTasks() }}/{{ meetup()!.tasks.length }}</span>
+                    <div class="flex justify-between text-sm mb-1.5">
+                      <span class="text-stone-500">Zadania ukończone</span>
+                      <span class="text-stone-900 tabular-nums">{{ doneTasks() }} / {{ meetup()!.tasks.length }}</span>
                     </div>
-                    <div class="h-2 bg-gray-800 rounded-full">
-                      <div class="h-full bg-green-500 rounded-full" [style.width]="taskPct() + '%'"></div>
+                    <div class="h-2 bg-stone-100 rounded-full overflow-hidden">
+                      <div class="h-full bg-emerald-500 rounded-full transition-all duration-500" [style.width]="taskPct() + '%'"></div>
                     </div>
                   </div>
                   <div class="grid grid-cols-2 gap-3 pt-2">
-                    <div class="text-center p-2 bg-gray-800 rounded">
-                      <div class="text-lg font-bold text-purple-400">{{ meetup()!.talkIds.length }}</div>
-                      <div class="text-xs text-gray-500">talki</div>
+                    <div class="text-center p-3 bg-stone-50 rounded-2xl border border-stone-100">
+                      <div class="text-2xl font-semibold text-stone-900">{{ meetup()!.talkIds.length }}</div>
+                      <div class="text-xs text-stone-500 mt-0.5">talki</div>
                     </div>
-                    <div class="text-center p-2 bg-gray-800 rounded">
-                      <div class="text-lg font-bold text-yellow-400">{{ meetup()!.sponsors.length }}</div>
-                      <div class="text-xs text-gray-500">sponsorzy</div>
+                    <div class="text-center p-3 bg-stone-50 rounded-2xl border border-stone-100">
+                      <div class="text-2xl font-semibold text-stone-900">{{ meetup()!.sponsors.length }}</div>
+                      <div class="text-xs text-stone-500 mt-0.5">sponsorzy</div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <!-- Blocked tasks quick view -->
-              <div class="bg-gray-900 border border-gray-800 p-4 rounded">
-                <h3 class="text-sm text-gray-400 font-mono mb-3">🚫 Blocked taski</h3>
+              <div class="bg-white border border-stone-200 p-5 rounded-3xl shadow-sm">
+                <h3 class="text-sm font-medium text-stone-700 mb-4">Zablokowane zadania</h3>
                 @if (blockedTasks().length === 0) {
-                  <div class="text-gray-600 text-sm">Nic nie jest blocked 🎉</div>
+                  <div class="text-stone-500 text-sm">Żadne zadanie nie jest zablokowane.</div>
                 }
                 <div class="space-y-2">
                   @for (task of blockedTasks(); track task.id) {
-                    <div class="bg-red-950 border border-red-900 p-3 rounded text-sm">
-                      <div class="font-mono text-white">{{ task.title }}</div>
+                    <div class="bg-rose-50 border border-rose-200 p-3 rounded-2xl text-sm">
+                      <div class="text-stone-900 font-medium">{{ task.title }}</div>
                       @if (task.blocker) {
-                        <div class="text-red-400 text-xs mt-1">→ {{ task.blocker }}</div>
+                        <div class="text-rose-700 text-xs mt-1">{{ task.blocker }}</div>
                       }
                       @if (task.assignee) {
-                        <div class="text-gray-500 text-xs mt-1">👤 {{ task.assignee }}</div>
+                        <div class="text-stone-500 text-xs mt-1">Odpowiedzialny: {{ task.assignee }}</div>
                       }
                     </div>
                   }
                 </div>
               </div>
 
-              <!-- Timeline for scheduled/later -->
               @if (['scheduled', 'za-tydzien', 'dzis', 'odbyty'].includes(meetup()!.status)) {
-                <div class="md:col-span-2 bg-gray-900 border border-gray-800 p-4 rounded">
-                  <h3 class="text-sm text-gray-400 font-mono mb-3">🕐 Timeline dnia</h3>
-                  <div class="space-y-2">
-                    <div class="flex gap-3 items-start">
-                      <span class="text-xs text-gray-500 font-mono w-12 shrink-0">17:30</span>
-                      <div class="text-sm text-gray-300">Drzwi otwarte, networking, kawa ☕</div>
+                <div class="md:col-span-2 bg-white border border-stone-200 p-5 rounded-3xl shadow-sm">
+                  <h3 class="text-sm font-medium text-stone-700 mb-4">Plan dnia</h3>
+                  <div class="space-y-3">
+                    <div class="flex gap-4 items-start">
+                      <span class="text-xs text-stone-400 tabular-nums w-12 shrink-0 pt-0.5">17:30</span>
+                      <div class="text-sm text-stone-700">Drzwi otwarte, networking, kawa</div>
                     </div>
-                    <div class="flex gap-3 items-start">
-                      <span class="text-xs text-gray-500 font-mono w-12 shrink-0">18:00</span>
-                      <div class="text-sm text-gray-300">Powitanie organizatorów, ogłoszenia sponsorów</div>
+                    <div class="flex gap-4 items-start">
+                      <span class="text-xs text-stone-400 tabular-nums w-12 shrink-0 pt-0.5">18:00</span>
+                      <div class="text-sm text-stone-700">Powitanie organizatorów, ogłoszenia sponsorów</div>
                     </div>
                     @for (talk of meetupTalks(); track talk.id; let i = $index) {
-                      <div class="flex gap-3 items-start">
-                        <span class="text-xs text-green-500 font-mono w-12 shrink-0">{{ talkTime(i) }}</span>
+                      <div class="flex gap-4 items-start">
+                        <span class="text-xs text-indigo-600 tabular-nums w-12 shrink-0 pt-0.5 font-medium">{{ talkTime(i) }}</span>
                         <div>
-                          <div class="text-sm text-white">{{ talk.title }}</div>
-                          <div class="text-xs text-gray-500">{{ speakerName(talk.speakerId) }} · {{ talk.duration }} min</div>
+                          <div class="text-sm text-stone-900 font-medium">{{ talk.title }}</div>
+                          <div class="text-xs text-stone-500 mt-0.5">{{ speakerName(talk.speakerId) }} &middot; {{ talk.duration }} min</div>
                         </div>
                       </div>
                     }
-                    <div class="flex gap-3 items-start">
-                      <span class="text-xs text-gray-500 font-mono w-12 shrink-0">20:30</span>
-                      <div class="text-sm text-gray-300">After party 🍺 — lokalizacja TBD</div>
+                    <div class="flex gap-4 items-start">
+                      <span class="text-xs text-stone-400 tabular-nums w-12 shrink-0 pt-0.5">20:30</span>
+                      <div class="text-sm text-stone-700">After party — lokalizacja TBD</div>
                     </div>
                   </div>
                 </div>
@@ -152,31 +153,39 @@ const TASK_NEXT: Record<TaskStatus, TaskStatus> = {
           @case ('tasks') {
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
               @for (col of taskColumns; track col.status) {
-                <div class="bg-gray-900 border border-gray-800 rounded p-3">
-                  <h3 class="text-xs font-mono text-gray-400 mb-3">{{ col.label }} ({{ tasksByStatus(col.status).length }})</h3>
+                <div class="border rounded-3xl p-4 {{ col.col }}">
+                  <h3 class="text-sm font-semibold text-stone-800 mb-3 flex items-center justify-between">
+                    <span class="flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full {{ col.dot }}"></span>
+                      {{ col.label }}
+                    </span>
+                    <span class="text-xs text-stone-500 tabular-nums bg-white/70 px-2 py-0.5 rounded-full">
+                      {{ tasksByStatus(col.status).length }}
+                    </span>
+                  </h3>
                   <div class="space-y-2 min-h-24">
                     @for (task of tasksByStatus(col.status); track task.id) {
                       <div
-                        class="p-3 rounded border text-sm cursor-pointer transition-all"
+                        class="p-3 rounded-2xl border text-sm cursor-pointer transition-all bg-white shadow-sm hover:shadow-md"
                         [class]="taskCardClass(task.status)"
                         (click)="advanceTask(task)"
                       >
-                        <div class="font-mono text-xs text-gray-400 mb-1">
-                          {{ task.assignee ? '👤 ' + task.assignee : '' }}
-                          {{ task.dueDate ? '📅 ' + shortDate(task.dueDate) : '' }}
+                        <div class="text-xs text-stone-500 mb-1.5 flex gap-2 flex-wrap">
+                          @if (task.assignee) { <span>{{ task.assignee }}</span> }
+                          @if (task.dueDate) { <span class="tabular-nums">{{ shortDate(task.dueDate) }}</span> }
                         </div>
-                        <div class="text-white">{{ task.title }}</div>
+                        <div class="text-stone-900 font-medium">{{ task.title }}</div>
                         @if (task.blocker && task.status === 'blocked') {
-                          <div class="text-red-400 text-xs mt-1">🚧 {{ task.blocker }}</div>
+                          <div class="text-rose-700 text-xs mt-1.5">{{ task.blocker }}</div>
                         }
-                        <div class="text-xs text-gray-600 mt-2">
-                          klik → {{ TASK_NEXT[task.status] }}
+                        <div class="text-xs text-stone-400 mt-2">
+                          kliknij → {{ TASK_NEXT_LABEL[task.status] }}
                         </div>
                       </div>
                     }
                     @if (tasksByStatus(col.status).length === 0) {
-                      <div class="text-gray-700 text-xs text-center py-4 border border-dashed border-gray-800 rounded">
-                        puste
+                      <div class="text-stone-400 text-xs text-center py-6 border border-dashed border-stone-300 rounded-2xl">
+                        pusto
                       </div>
                     }
                   </div>
@@ -187,14 +196,14 @@ const TASK_NEXT: Record<TaskStatus, TaskStatus> = {
 
           @case ('talks') {
             <div>
-              <div class="flex gap-2 mb-4 flex-wrap">
+              <div class="flex gap-2 mb-6 flex-wrap">
                 @for (f of talkFilters; track f.value) {
                   <button
                     (click)="talkFilter.set(f.value)"
-                    class="px-3 py-1 text-xs font-mono border rounded transition-colors cursor-pointer"
+                    class="px-3 py-1.5 text-sm border rounded-full transition-colors cursor-pointer"
                     [class]="talkFilter() === f.value
-                      ? 'bg-green-900 text-green-300 border-green-700'
-                      : 'bg-gray-900 text-gray-500 border-gray-700 hover:border-gray-500'"
+                      ? 'bg-stone-900 text-white border-stone-900'
+                      : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'"
                   >
                     {{ f.label }}
                   </button>
@@ -202,31 +211,33 @@ const TASK_NEXT: Record<TaskStatus, TaskStatus> = {
               </div>
               <div class="space-y-3">
                 @for (talk of filteredTalks(); track talk.id) {
-                  <div class="bg-gray-900 border border-gray-800 p-4 rounded">
-                    <div class="flex items-start justify-between mb-2">
+                  <div class="bg-white border border-stone-200 p-5 rounded-3xl shadow-sm">
+                    <div class="flex items-start justify-between mb-2 gap-3">
                       <div>
-                        <div class="font-bold text-white">{{ talk.title }}</div>
-                        <div class="text-xs text-gray-500 mt-1">
-                          🎤 {{ speakerName(talk.speakerId) }} · {{ talk.duration }} min · {{ talk.level }}
+                        <div class="font-semibold text-stone-900">{{ talk.title }}</div>
+                        <div class="text-xs text-stone-500 mt-1">
+                          {{ speakerName(talk.speakerId) }} &middot; {{ talk.duration }} min &middot; {{ talk.level }}
                         </div>
                       </div>
                       <app-status-badge [status]="talk.status" type="talk" />
                     </div>
-                    <p class="text-sm text-gray-400 mt-2">{{ talk.abstract }}</p>
+                    <p class="text-sm text-stone-700 mt-3 leading-relaxed">{{ talk.abstract }}</p>
                     @if (talk.rating) {
-                      <div class="text-xs text-yellow-400 mt-2">{{ '⭐'.repeat(talk.rating) }} {{ talk.rating }}/5</div>
+                      <div class="text-sm text-amber-600 mt-3 tabular-nums">
+                        {{ '★'.repeat(talk.rating) }}{{ '☆'.repeat(5 - talk.rating) }} &nbsp; {{ talk.rating }}/5
+                      </div>
                     }
-                    <div class="flex gap-2 mt-3 flex-wrap">
+                    <div class="flex gap-2 mt-4 flex-wrap">
                       @if (talk.status === 'submitted' || talk.status === 'reviewing') {
-                        <button (click)="approveTalk(talk.id)" class="px-3 py-1 text-xs bg-green-900 hover:bg-green-800 text-green-300 border border-green-700 rounded cursor-pointer">
-                          ✅ Approve
+                        <button (click)="approveTalk(talk.id)" class="px-3 py-1.5 text-sm bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-2xl cursor-pointer transition-colors">
+                          Zaakceptuj
                         </button>
-                        <button (click)="rejectTalk(talk.id)" class="px-3 py-1 text-xs bg-red-950 hover:bg-red-900 text-red-400 border border-red-800 rounded cursor-pointer">
-                          ❌ Reject
+                        <button (click)="rejectTalk(talk.id)" class="px-3 py-1.5 text-sm bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-2xl cursor-pointer transition-colors">
+                          Odrzuć
                         </button>
                         @if (talk.status === 'submitted') {
-                          <button (click)="reviewTalk(talk.id)" class="px-3 py-1 text-xs bg-blue-950 hover:bg-blue-900 text-blue-400 border border-blue-800 rounded cursor-pointer">
-                            👀 Reviewing
+                          <button (click)="reviewTalk(talk.id)" class="px-3 py-1.5 text-sm bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-2xl cursor-pointer transition-colors">
+                            Przejrzyj
                           </button>
                         }
                       }
@@ -234,7 +245,7 @@ const TASK_NEXT: Record<TaskStatus, TaskStatus> = {
                   </div>
                 }
                 @if (filteredTalks().length === 0) {
-                  <div class="text-gray-600 text-sm text-center py-8">Brak talków dla tego filtru</div>
+                  <div class="text-stone-500 text-sm text-center py-10">Brak talków dla tego filtru</div>
                 }
               </div>
             </div>
@@ -243,30 +254,30 @@ const TASK_NEXT: Record<TaskStatus, TaskStatus> = {
           @case ('speakers') {
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               @for (speaker of meetupSpeakers(); track speaker.id) {
-                <div class="bg-gray-900 border border-gray-800 p-4 rounded">
+                <div class="bg-white border border-stone-200 p-5 rounded-3xl shadow-sm">
                   <div class="flex items-center gap-3 mb-3">
                     <div
-                      class="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold"
+                      class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold text-white"
                       [style.background]="avatarColor(speaker.avatarSeed)"
                     >
                       {{ speaker.name.charAt(0) }}
                     </div>
                     <div>
-                      <div class="font-bold text-white text-sm">{{ speaker.name }}</div>
+                      <div class="font-semibold text-stone-900 text-sm">{{ speaker.name }}</div>
                       @if (speaker.twitter) {
-                        <div class="text-xs text-blue-400">@{{ speaker.twitter }}</div>
+                        <div class="text-xs text-indigo-600">&#64;{{ speaker.twitter }}</div>
                       }
                     </div>
                   </div>
-                  <p class="text-xs text-gray-400">{{ speaker.bio }}</p>
-                  <div class="text-xs text-gray-500 mt-2">
-                    🎤 {{ speaker.previousTalks }} poprzednich talków
+                  <p class="text-sm text-stone-600 leading-relaxed">{{ speaker.bio }}</p>
+                  <div class="text-xs text-stone-500 mt-3">
+                    {{ speaker.previousTalks }} poprzednich talków
                   </div>
                 </div>
               }
               @if (meetupSpeakers().length === 0) {
-                <div class="col-span-3 text-gray-600 text-center py-8">
-                  Brak speakerów. Ogarnij CFP!
+                <div class="col-span-3 text-stone-500 text-center py-10">
+                  Brak speakerów. Czas ogarnąć CFP.
                 </div>
               }
             </div>
@@ -275,19 +286,19 @@ const TASK_NEXT: Record<TaskStatus, TaskStatus> = {
           @case ('sponsors') {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               @for (sponsor of meetup()!.sponsors; track sponsor) {
-                <div class="bg-gray-900 border border-gray-700 p-6 rounded flex items-center gap-4">
-                  <div class="w-12 h-12 rounded bg-gray-700 flex items-center justify-center text-xl">
-                    💰
+                <div class="bg-white border border-stone-200 p-5 rounded-3xl shadow-sm flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-2xl bg-stone-100 text-stone-500 flex items-center justify-center text-xl font-semibold">
+                    {{ sponsor.charAt(0) }}
                   </div>
                   <div>
-                    <div class="font-bold text-white">{{ sponsor }}</div>
-                    <div class="text-xs text-gray-500 mt-1">Gold Sponsor</div>
+                    <div class="font-semibold text-stone-900">{{ sponsor }}</div>
+                    <div class="text-xs text-stone-500 mt-0.5">Gold Sponsor</div>
                   </div>
                 </div>
               }
               @if (meetup()!.sponsors.length === 0) {
-                <div class="col-span-2 text-gray-600 text-center py-8">
-                  Brak sponsorów. Śmierć aplikacji 💸
+                <div class="col-span-2 text-stone-500 text-center py-10">
+                  Brak sponsorów.
                 </div>
               }
             </div>
@@ -297,9 +308,8 @@ const TASK_NEXT: Record<TaskStatus, TaskStatus> = {
     } @else {
       <div class="min-h-screen flex items-center justify-center">
         <div class="text-center">
-          <div class="text-4xl mb-4">🤷</div>
-          <div class="text-gray-400">Meetup nie istnieje</div>
-          <a routerLink="/dashboard" class="text-green-400 hover:text-green-300 text-sm mt-2 inline-block">← Wróć do dashboardu</a>
+          <div class="text-stone-600 text-lg">Meetup nie istnieje</div>
+          <a routerLink="/dashboard" class="text-indigo-600 hover:text-indigo-800 text-sm mt-3 inline-block">← Wróć do panelu</a>
         </div>
       </div>
     }
@@ -310,24 +320,25 @@ export class MeetupDetailComponent {
   private store = inject(AppStore);
 
   readonly TASK_NEXT = TASK_NEXT;
+  readonly TASK_NEXT_LABEL = TASK_NEXT_LABEL;
   readonly taskColumns = TASK_COLUMNS;
 
   tabs = [
-    { id: 'overview' as Tab, label: '📊 Overview' },
-    { id: 'talks' as Tab, label: '🎤 Talks' },
-    { id: 'tasks' as Tab, label: '✅ Tasks' },
-    { id: 'speakers' as Tab, label: '👤 Speakers' },
-    { id: 'sponsors' as Tab, label: '💰 Sponsors' },
+    { id: 'overview' as Tab, label: 'Przegląd' },
+    { id: 'talks' as Tab, label: 'Talki' },
+    { id: 'tasks' as Tab, label: 'Zadania' },
+    { id: 'speakers' as Tab, label: 'Speakerzy' },
+    { id: 'sponsors' as Tab, label: 'Sponsorzy' },
   ];
 
   talkFilters = [
     { label: 'Wszystkie', value: 'all' },
-    { label: 'Submitted', value: 'submitted' },
-    { label: 'Reviewing', value: 'reviewing' },
-    { label: 'Approved', value: 'approved' },
-    { label: 'Rejected', value: 'rejected' },
-    { label: 'Scheduled', value: 'scheduled' },
-    { label: 'Delivered', value: 'delivered' },
+    { label: 'Zgłoszone', value: 'submitted' },
+    { label: 'W review', value: 'reviewing' },
+    { label: 'Zaakceptowane', value: 'approved' },
+    { label: 'Odrzucone', value: 'rejected' },
+    { label: 'Zaplanowane', value: 'scheduled' },
+    { label: 'Wygłoszone', value: 'delivered' },
   ];
 
   activeTab = signal<Tab>('overview');
@@ -371,11 +382,11 @@ export class MeetupDetailComponent {
 
   taskCardClass(status: TaskStatus): string {
     switch (status) {
-      case 'todo': return 'bg-gray-800 border-gray-700 hover:border-gray-500';
-      case 'doing': return 'bg-blue-950 border-blue-900 hover:border-blue-700';
-      case 'blocked': return 'bg-red-950 border-red-900 hover:border-red-700';
-      case 'done': return 'bg-green-950 border-green-900 hover:border-green-700 opacity-70';
-      default: return 'bg-gray-800 border-gray-700';
+      case 'todo': return 'border-stone-200 hover:border-stone-400';
+      case 'doing': return 'border-indigo-200 hover:border-indigo-400';
+      case 'blocked': return 'border-rose-200 hover:border-rose-400 bg-rose-50/60';
+      case 'done': return 'border-emerald-200 hover:border-emerald-400 opacity-75';
+      default: return 'border-stone-200';
     }
   }
 
@@ -417,7 +428,7 @@ export class MeetupDetailComponent {
   }
 
   avatarColor(seed: string): string {
-    const colors = ['#1e3a5f', '#3d1a5f', '#1a3d1a', '#5f3d1a', '#1a3a5f', '#5f1a3a'];
+    const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#14b8a6', '#3b82f6', '#ef4444'];
     let hash = 0;
     for (let i = 0; i < seed.length; i++) hash = seed.charCodeAt(i) + ((hash << 5) - hash);
     return colors[Math.abs(hash) % colors.length];
